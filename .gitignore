@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pyo
+*.pyd
+*.pt
+*.pth
+*.ipynb_checkpoints/
+outputs/
+data/
+mnt/
+models/

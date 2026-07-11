@@ -1,0 +1,19 @@
+{
+  "project": "AEGL",
+  "proposal_alignment": [
+    "Variational routing via Gumbel-Softmax",
+    "Graph Transformer reasoning over retrieved subgraphs",
+    "ELBO-based uncertainty calibration",
+    "Causal counterfactual verification"
+  ],
+  "latest_evaluation": {
+    "baseline": {
+      "id_top1": 0.1033,
+      "ood_top1": 0.0967
+    },
+    "full": {
+      "id_top1": 0.1967,
+      "ood_top1": 0.0867
+    }
+  }
+}

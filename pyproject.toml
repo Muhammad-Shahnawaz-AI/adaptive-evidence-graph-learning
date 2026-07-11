@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegl"
+version = "0.1.0"
+description = "Adaptive Evidence Graph Learning"
+authors = [
+    {name="Muhammad Shahnawaz"}
+]
+requires-python = ">=3.11"
+
+dependencies = [
+    "torch>=2.8",
+    "torchvision",
+    "torchaudio",
+
+    "timm",
+
+    "torch-geometric",
+
+    "hydra-core",
+
+    "omegaconf",
+
+    "faiss-gpu",
+
+    "numpy",
+
+    "scipy",
+
+    "opencv-python",
+
+    "torchmetrics",
+
+    "wandb",
+
+    "tensorboard",
+
+    "rich",
+
+    "tqdm",
+
+    "matplotlib",
+
+    "pandas",
+
+    "scikit-learn",
+
+    "pytest"
+]

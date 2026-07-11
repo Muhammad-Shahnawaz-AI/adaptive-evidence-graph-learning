@@ -15,7 +15,7 @@ import torch
 
 from aegl.config import AEGLConfig
 from aegl.model import AEGLModel
-from aegl.data import build_dataloaders
+from aegl.data import build_dataloaders, build_real_dataloaders
 from aegl.losses import elbo_loss
 from aegl.metrics import topk_accuracy, expected_calibration_error, macro_f1
 
@@ -51,9 +51,15 @@ def train(args):
     model = AEGLModel(cfg).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    train_loader, id_loader, ood_loader = build_dataloaders(
-        cfg, samples_per_class=args.samples_per_class, batch_size=args.batch_size
-    )
+    if args.train_dir:
+        train_loader, id_loader, ood_loader = build_real_dataloaders(
+            cfg, args.train_dir, args.id_test_dir, args.ood_test_dir,
+            batch_size=args.batch_size,
+        )
+    else:
+        train_loader, id_loader, ood_loader = build_dataloaders(
+            cfg, samples_per_class=args.samples_per_class, batch_size=args.batch_size
+        )
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -100,10 +106,22 @@ if __name__ == "__main__":
                          choices=["full", "baseline", "static_topology", "no_elbo", "no_causal"])
     parser.add_argument("--num-classes", type=int, default=10)
     parser.add_argument("--image-size", type=int, default=32)
-    parser.add_argument("--samples-per-class", type=int, default=200)
+    parser.add_argument("--samples-per-class", type=int, default=200,
+                         help="Synthetic proxy only; ignored if --train-dir is set.")
+    parser.add_argument("--train-dir", type=str, default=None,
+                         help="Path to a real ImageFolder-layout training set "
+                              "(e.g. ImageNet-A/R, iNaturalist). If set, overrides "
+                              "the synthetic proxy dataset. Requires --id-test-dir "
+                              "and --ood-test-dir, and torchvision installed.")
+    parser.add_argument("--id-test-dir", type=str, default=None,
+                         help="Path to the in-distribution test split (ImageFolder layout).")
+    parser.add_argument("--ood-test-dir", type=str, default=None,
+                         help="Path to the OOD/shifted test split (ImageFolder layout).")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--out", type=str, default="aegl_checkpoint.pt")
     args = parser.parse_args()
+    if args.train_dir and not (args.id_test_dir and args.ood_test_dir):
+        parser.error("--train-dir requires both --id-test-dir and --ood-test-dir.")
     train(args)

@@ -65,13 +65,31 @@ in-distribution data, plus a rotated/rescaled/noise-heavy variant for the
 "OOD test" split (standing in for the ImageNet-A/R style shift). It exists
 solely so every module — encoder, memory, router, graph transformer, ELBO,
 uncertainty, causal verification — can be exercised end-to-end without
-external downloads.
+external downloads. **All numbers produced by `train.py` / `evaluate.py`
+by default come from this synthetic proxy, not the real benchmarks, and
+should not be cited as evidence for the proposal's empirical claims.**
 
-**To run on a real benchmark**, replace `build_dataloaders` in
-`aegl/data.py` with a loader (e.g. `torchvision.datasets.ImageFolder`, or a
-custom iNaturalist/MIMIC-IV reader) that yields `(image_tensor, label)`
-batches — no other file needs to change, since the rest of the framework
-only depends on that contract.
+**To run on a real benchmark**, `aegl/data.py` now also ships
+`build_real_dataloaders`, which loads any dataset in
+`torchvision.datasets.ImageFolder` layout (train / in-distribution-test /
+OOD-test each as their own directory of `class_name/*.jpg` folders). Point
+`train.py` at local copies of ImageNet-A/R, iNaturalist, or any other
+ImageFolder-compatible split:
+
+```bash
+pip install torchvision
+python train.py --ablation full --epochs 5 \
+  --train-dir /path/to/train \
+  --id-test-dir /path/to/id_test \
+  --ood-test-dir /path/to/ood_test \
+  --num-classes <N>
+```
+
+No other file needs to change, since the rest of the framework only
+depends on the `(image_tensor, label)` batch contract that both loaders
+return. `evaluate.py` (the full ablation-matrix comparison) still uses the
+synthetic proxy only; wire `build_real_dataloaders` into it the same way
+if you want the full Section 5.1 comparison table on real data.
 
 ## Scaling up
 

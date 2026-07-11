@@ -83,3 +83,57 @@ def build_dataloaders(cfg, samples_per_class=200, batch_size=64, num_workers=0):
     id_loader = DataLoader(id_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     ood_loader = DataLoader(ood_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     return train_loader, id_loader, ood_loader
+
+
+def build_real_dataloaders(cfg, train_dir: str, id_test_dir: str, ood_test_dir: str,
+                            batch_size: int = 64, num_workers: int = 4):
+    """
+    Real-benchmark loader for Table 5.1-style evaluation (e.g. a local
+    ImageNet-A/R or iNaturalist checkout), following the exact
+    `(image_tensor, label)` contract used everywhere else in the pipeline.
+
+    Each of `train_dir` / `id_test_dir` / `ood_test_dir` must be a directory
+    in `torchvision.datasets.ImageFolder` layout, i.e.:
+
+        train_dir/
+          class_0/  img1.jpg  img2.jpg ...
+          class_1/  ...
+
+    `id_test_dir` should hold the in-distribution (closed-world) held-out
+    split, and `ood_test_dir` the shifted/OOD split (e.g. ImageNet-R's
+    renditions, or iNaturalist's rare/long-tail classes). No other file in
+    this project needs to change -- `AEGLModel`, `train.py`, and
+    `evaluate.py` only depend on the `(image, label)` batch contract that
+    this function also returns.
+
+    Requires `torchvision` (not in requirements.txt by default, since the
+    synthetic proxy above has no such dependency): `pip install torchvision`.
+    """
+    try:
+        from torchvision import datasets, transforms
+    except ImportError as e:
+        raise ImportError(
+            "build_real_dataloaders requires torchvision. Install it with "
+            "`pip install torchvision` (or `pip install torchvision --break-system-packages`)."
+        ) from e
+
+    tfm = transforms.Compose([
+        transforms.Resize((cfg.image_size, cfg.image_size)),
+        transforms.ToTensor(),
+    ])
+
+    train_ds = datasets.ImageFolder(train_dir, transform=tfm)
+    id_test_ds = datasets.ImageFolder(id_test_dir, transform=tfm)
+    ood_test_ds = datasets.ImageFolder(ood_test_dir, transform=tfm)
+
+    if len(train_ds.classes) != cfg.num_classes:
+        raise ValueError(
+            f"cfg.num_classes={cfg.num_classes} does not match "
+            f"{len(train_ds.classes)} classes found in '{train_dir}'. "
+            f"Set --num-classes to match your dataset."
+        )
+
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    id_loader = DataLoader(id_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    ood_loader = DataLoader(ood_test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    return train_loader, id_loader, ood_loader
